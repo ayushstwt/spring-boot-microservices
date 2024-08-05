@@ -1,6 +1,8 @@
 package com.narainox.currency_conversion_service.controller;
 
 import com.narainox.currency_conversion_service.entity.CurrencyConversion;
+import com.narainox.currency_conversion_service.service.CurrencyExchangeProxy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +16,9 @@ import java.util.HashMap;
 @RequestMapping("/api/currency-conversion")
 public class CurrencyConversionController {
 
+    @Autowired
+    private CurrencyExchangeProxy currencyExchangeProxy;
+
     @GetMapping("/currency-converter/from/{from}/to/{to}/quantity/{quantity}")
     public CurrencyConversion convertCurrency(
             @PathVariable String from,
@@ -24,9 +29,28 @@ public class CurrencyConversionController {
         HashMap<String,String> uriVariables = new HashMap<>();
         uriVariables.put("from", from);
         uriVariables.put("to", to);
+
         ResponseEntity<CurrencyConversion> responseEntity = new RestTemplate().getForEntity("http://localhost:8000/api/currency-exchange/from/{from}/to/{to}", CurrencyConversion.class, uriVariables);
         CurrencyConversion responseEntityBody = responseEntity.getBody();
         CurrencyConversion currencyConversion = new CurrencyConversion();
+        currencyConversion.setId(responseEntityBody.getId());
+        currencyConversion.setFrom(from);
+        currencyConversion.setTo(to);
+        currencyConversion.setQuantity(quantity);
+        currencyConversion.setConversionMultiple(responseEntityBody.getConversionMultiple());
+        currencyConversion.setTotalCalculatedAmount(quantity * responseEntityBody.getConversionMultiple());
+        currencyConversion.setEnvironment(responseEntityBody.getEnvironment());
+        return currencyConversion;
+    }
+
+    @GetMapping("/currency-exchange/from/{from}/to/{to}/quantity/{quantity}")
+    public CurrencyConversion convertCurrencyUsingFeign(
+            @PathVariable String from,
+            @PathVariable String to,
+            @PathVariable double quantity)
+    {
+        CurrencyConversion currencyConversion = new CurrencyConversion();
+        CurrencyConversion responseEntityBody = currencyExchangeProxy.getExchangeValue(from, to);
         currencyConversion.setId(responseEntityBody.getId());
         currencyConversion.setFrom(from);
         currencyConversion.setTo(to);
