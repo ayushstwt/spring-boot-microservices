@@ -27,4 +27,10 @@ public class CurrencyController {
         exchangeValue.setEnvironment(environment.getProperty("local.server.port"));
         return exchangeValue;
     }
+
+    @GetMapping("/hello")
+    public String hello() {
+        return "hello";
+    }
+
 }
